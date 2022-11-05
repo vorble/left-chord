@@ -9,3 +9,4 @@ Prototype left-hand-only input mechanisms for US keyboards.
 * Pairs of keys are pressed to access the right portions of the keyboard.
 * The order of key presses matters, e.g. press 12 for 5, 21 for 6, 23 for 7, etc.
 * Tab is the symbol modifier key and works with key pairs. Accepted key pairs start at 2, w, s, x due to limitations of keyboards where tab and 1, q, a, z don't allow a third key press to be recognized.
+* Hold space and press tab to backspace.
