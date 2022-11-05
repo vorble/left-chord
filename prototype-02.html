@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>Left Chord</title>
+<style>
+  html, body {
+    font-family:'Courier New', Courier, monospace;
+  }
+  p {
+    background-color: #EEE;
+    white-space: pre;
+  }
+</style>
+<body>
+<p id="debug"></p>
+<p id="content"></p>
+<script>
+  let mod_upper = false;
+  let mod_symbol = false;
+  let mute_mod_symbol_release = false;
+  let mute_mod_upper_release = false;
+  let mute_basic_keys = false;
+  const chord = [];
+
+  function showDebug() {
+    const upper_color = mod_upper ? (mute_mod_upper_release ? '#B22' : '#000') : '#BBB';
+    const symbol_color = mod_symbol ? (mute_mod_symbol_release ? '#B22' : '#000') : '#BBB';
+    let content = '';
+    content += `<span style="color: ${upper_color}">UPPER</span>`;
+    content += `&nbsp;`;
+    content += `<span style="color: ${symbol_color}">SYMBOL</span>`;
+    content += `&nbsp;`;
+    content += JSON.stringify(chord);
+    debug.innerHTML = content;
+  }
+
+  const chord_map = {
+    '`': { reg: '`~' },
+
+    '1': { reg: '1!' },
+    '2': { reg: '2@' },
+    '3': { reg: '3#' },
+    '4': { reg: '4$' },
+    '5': { reg: '5%' },
+
+    'q': { reg: 'qQ' },
+    'w': { reg: 'wW' },
+    'e': { reg: 'eE' },
+    'r': { reg: 'rR' },
+    't': { reg: 'tT' },
+
+    'a': { reg: 'aA' },
+    's': { reg: 'sS' },
+    'd': { reg: 'dD' },
+    'f': { reg: 'fF' },
+    'g': { reg: 'gG' },
+
+    'z': { reg: 'zZ' },
+    'x': { reg: 'xX' },
+    'c': { reg: 'cC' },
+    'v': { reg: 'vV' },
+    'b': { reg: 'bB' },
+
+    '12': { reg: '5%' },
+    '21': { reg: '6^' },
+    '23': { reg: '7&', sym: '-_' },
+    '32': { reg: '8*', sym: '=+' },
+    '34': { reg: '9(' },
+    '43': { reg: '0)' },
+
+    'qw': { reg: 'tT' },
+    'wq': { reg: 'yY' },
+    'we': { reg: 'uU', sym: '[{' },
+    'ew': { reg: 'iI', sym: ']}' },
+    'er': { reg: 'oO', sym: '\\|' },
+    're': { reg: 'pP' },
+
+    'as': { reg: 'gG' },
+    'sa': { reg: 'hH' },
+    'sd': { reg: 'jJ', sym: ';:' },
+    'ds': { reg: 'kK', sym: '\'"' },
+    'df': { reg: 'lL' },
+    'fd': {},
+
+    'zx': { reg: 'bB' },
+    'xz': { reg: 'nN' },
+    'xc': { reg: 'mM', sym: ',<' },
+    'cx': {            sym: '.>' },
+    'cv': {            sym: '/?' },
+    'vc': {},
+  };
+
+  function isModUpper(e) {
+    return e.key == ' ';
+  }
+
+  function isModSymbol(e) {
+    return e.key == 'Tab';
+  }
+
+  function eventToBasicKey(e) {
+    const lc = e.key.toLowerCase();
+    if (e.key.length == 1 && lc == e.key) { // lowercase letter
+      return lc;
+    } else if ('0123456789'.indexOf(e.key) >= 0) { // digit
+      return e.key;
+    } else if (e.key == '`') {
+      return e.key;
+    }
+    return null;
+  }
+
+  function appendChord(k) {
+    if (chord.indexOf(k) < 0) {
+      chord.push(k);
+    }
+  }
+
+  function chordToChar() {
+    if (chord.length == 0) {
+      if (mod_upper && mod_symbol) {
+        return 'Backspace';
+      } else if (mod_upper) {
+        return ' ';
+      }
+    } else if (chord.length == 1 || chord.length == 2) {
+      mute_basic_keys = true;
+      const ch = chord_map[chord.join('')];
+      console.log(JSON.stringify(chord.join('')), ch);
+      if (ch) {
+        if (mod_upper && mod_symbol && ch.sym) {
+          return ch.sym[1];
+        } else if (mod_symbol && ch.sym) {
+          return ch.sym[0];
+        } else if (mod_upper && ch.reg) {
+          return ch.reg[1];
+        } else if (ch.reg) {
+          return ch.reg[0];
+        }
+      }
+    }
+    return ''; // TODO: How to tab stuff?
+  }
+
+  function processChord() {
+    const c = chordToChar();
+    if (c == 'Backspace') {
+      if (content.textContent.length > 0) {
+        content.textContent = content.textContent.slice(0, content.textContent.length - 1);
+      }
+      if (mod_upper) {
+        mute_mod_upper_release = true;
+      }
+      if (mod_symbol) {
+        mute_mod_symbol_release = true;
+      }
+    } else if (c) {
+      if (mod_upper && c != ' ') {
+        mute_mod_upper_release = true;
+      }
+      if (mod_symbol) {
+        mute_mod_symbol_release = true;
+      }
+      content.textContent += c;
+    }
+    chord.length = 0;
+  }
+
+  window.onkeydown = (e) => {
+    console.log(new Date().getTime() + ' - down ' + e.key);
+    try {
+      if (isModUpper(e)) {
+        mod_upper = true;
+      } else if (isModSymbol(e)) {
+        mod_symbol = true;
+      } else {
+        const k = eventToBasicKey(e);
+        if (k && !mute_basic_keys) {
+          appendChord(k);
+        }
+      }
+    } finally {
+      showDebug();
+      if (e.key == 'Tab') {
+        e.stopPropagation();
+        return false;
+      }
+    }
+  };
+
+  window.onkeyup = (e) => {
+    console.log(new Date().getTime() + ' - up ' + e.key);
+    try {
+      if (isModUpper(e)) {
+        if (!mute_mod_upper_release) {
+          processChord();
+        }
+        mod_upper = false;
+        mute_mod_upper_release = false;
+      } else if (isModSymbol(e)) {
+        if (!mute_mod_symbol_release) {
+          processChord();
+        }
+        mod_symbol = false;
+        mute_mod_symbol_release = false;
+      } else if (!mute_basic_keys) {
+        processChord();
+      }
+      if (!mod_symbol && !mod_upper) {
+        mute_basic_keys = false;
+      }
+    } finally {
+      showDebug();
+      if (e.key == 'Tab') {
+        e.stopPropagation();
+        return false;
+      }
+    }
+  };
+
+  window.onkeypress = (e) => {
+    console.log(new Date().getTime() + ' - press ' + e.key);
+    try {
+      // Nothing to do?
+    } finally {
+      showDebug();
+      if (e.key == 'Tab') {
+        e.stopPropagation();
+        return false;
+      }
+    }
+  };
+
+  showDebug();
+</script>

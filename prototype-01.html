@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>left Chord</title>
+<body>
+<p id="debug"></p>
+<p id="content"></p>
+<script>
+  const chords = {
+    '12': { reg: '6^', sym: '-_' },
+    '23': { reg: '7&', sym: '=+' },
+    '34': { reg: '8&' },
+    '45': { reg: '9(' },
+    '54': { reg: '0)' }, // <--
+
+    'qw': { reg: 'yY', sym: '[{' },
+    'we': { reg: 'uU', sym: ']}' },
+    'er': { reg: 'iI', sym: '\\|' },
+    'rt': { reg: 'oO' },
+    'tr': { reg: 'pP' }, // <--
+
+    'as': { reg: 'hH', sym: ';:' },
+    'sd': { reg: 'jJ', sym: '\'"' },
+    'df': { reg: 'kK', sym: '\\|' },
+    'fg': { reg: 'lL' },
+    'gf': { reg: ';:' }, // <--
+
+    'zx': { reg: 'nN', sym: ',<' },
+    'xc': { reg: 'mM', sym: '.>' },
+    'cv': { reg: ',<', sym: '/?' },
+    'vb': { reg: '.>' },
+    'bv': { reg: '/?' }, // <--
+  };
+
+  function fuzzyUpper(c) {
+    c = c.toUpperCase();
+    if (c == '`') c = '~';
+    if (c == '1') c = '!';
+    if (c == '2') c = '@';
+    if (c == '3') c = '#';
+    if (c == '4') c = '$';
+    if (c == '5') c = '%';
+    return c;
+  }
+
+  const stack = [];
+  function stackToKey(stack) {
+    let upper = false;
+    let symbol = false;
+    if (stack.indexOf(' ') >= 0) {
+      stack = stack.filter(c => c != ' ');
+      upper = true;
+    }
+    if (stack.indexOf('tab') >= 0) {
+      stack = stack.filter(c => c != 'tab');
+      symbol = true;
+    }
+    if (stack.length == 0) {
+      console.log(upper, symbol);
+      if (upper && symbol)
+        return 'backspace';
+      else if (upper)
+        return ' ';
+      return '';
+    } else if (stack.length == 1) {
+      return upper ? fuzzyUpper(stack[0]) : stack[0];
+    } else if (stack.length == 2) {
+      const ch = stack[0] + stack[1];
+      const res = chords[ch];
+      if (res) {
+        if (symbol) {
+          return res.sym[upper ? 1 : 0];
+        } else {
+          return res.reg[upper ? 1 : 0];
+        }
+      }
+    }
+  }
+
+  window.onkeydown = (e) => {
+    const c = e.key.toLowerCase();
+    if (stack.length == 0 || stack[stack.length - 1] != c) {
+      stack.push(c);
+      debug.textContent = 'STACK: ' + JSON.stringify(stack);
+    }
+    if (c == 'tab') {
+      e.stopPropagation();
+      return false;
+    }
+  };
+
+  window.onkeyup = (e) => {
+    const c = e.key.toLowerCase();
+    if (stack.length > 0) {
+      const c = stackToKey(stack);
+      if (c) {
+        if (c == 'backspace') {
+          if (content.textContent.length > 0) {
+            content.textContent = content.textContent.slice(0, content.textContent.length - 1);
+          }
+        } else {
+          content.textContent += c;
+        }
+      }
+      stack.length = 0;
+      debug.textContent = 'STACK: ' +JSON.stringify(stack);
+    }
+    if (c == 'tab') {
+      e.stopPropagation();
+      return false;
+    }
+  };
+
+  window.onkeypress = (e) => {
+    const c = e.key.toLowerCase();
+    if (c == 'tab') {
+      e.stopPropagation();
+      return false;
+    }
+  };
+</script>
