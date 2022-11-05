@@ -142,7 +142,7 @@
     return ''; // TODO: How to tab stuff?
   }
 
-  function processChord() {
+  async function processChord() {
     const c = chordToChar();
     if (c == 'Backspace') {
       if (content.textContent.length > 0) {
@@ -154,6 +154,7 @@
       if (mod_symbol) {
         mute_mod_symbol_release = true;
       }
+      await navigator.clipboard.writeText(content.textContent);
     } else if (c) {
       if (mod_upper && c != ' ') {
         mute_mod_upper_release = true;
@@ -162,6 +163,7 @@
         mute_mod_symbol_release = true;
       }
       content.textContent += c;
+      await navigator.clipboard.writeText(content.textContent);
     }
     chord.length = 0;
   }
@@ -188,23 +190,23 @@
     }
   };
 
-  window.onkeyup = (e) => {
+  window.onkeyup = async (e) => {
     console.log(new Date().getTime() + ' - up ' + e.key);
     try {
       if (isModUpper(e)) {
         if (!mute_mod_upper_release) {
-          processChord();
+          await processChord();
         }
         mod_upper = false;
         mute_mod_upper_release = false;
       } else if (isModSymbol(e)) {
         if (!mute_mod_symbol_release) {
-          processChord();
+          await processChord();
         }
         mod_symbol = false;
         mute_mod_symbol_release = false;
       } else if (!mute_basic_keys) {
-        processChord();
+        await processChord();
       }
       if (!mod_symbol && !mod_upper) {
         mute_basic_keys = false;
