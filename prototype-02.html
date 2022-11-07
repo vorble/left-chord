@@ -10,16 +10,22 @@
     background-color: #EEE;
     white-space: pre;
   }
+  .caret {
+    display: inline-block;
+    background-color: #77F;
+    white-space: pre;
+  }
 </style>
 <body>
 <p id="debug"></p>
-<p id="content"></p>
+<p id="editor"></p>
 <script>
   let mod_upper = false;
   let mod_symbol = false;
   let mute_mod_symbol_release = false;
   let mute_mod_upper_release = false;
   let mute_basic_keys = false;
+  let content = '';
   const chord = [];
 
   function showDebug() {
@@ -88,6 +94,24 @@
     'cx': {            sym: '.>' },
     'cv': {            sym: '/?' },
     'vc': {},
+
+    // These don't work too well on my laptop keyboard.
+    // Releasing the chord seems to cause extra spaces to be inserted.
+    '123': { reg: '-_' },
+    '234': { reg: '=+' },
+
+    'eqw': { reg: '[{' },
+    'erw': { reg: ']}' },
+    'ert': { reg: '\\|' }, // er + t does not register on laptop
+    'ery': { reg: '\\|' }, // er + t does not register on laptop
+
+    'ads': { reg: ';:' },
+    'dfs': { reg: '\'"' },
+
+    'cxz': { reg: ',<' }, // cxz does not register on Razer Anansi
+    'cvx': { reg: '.>' },
+    'bcv': { reg: '/?' }, // bc + v does not register on laptop
+    'cnv': { reg: '/?' },
   };
 
   function isModUpper(e) {
@@ -138,6 +162,21 @@
           return ch.reg[0];
         }
       }
+    } else if (chord.length == 3) {
+      chord.sort();
+      ch = chord_map[chord.join('')];
+      console.log(JSON.stringify(chord.join('')), ch);
+      if (ch) {
+        if (mod_upper && mod_symbol && ch.sym) {
+          return ch.sym[1];
+        } else if (mod_symbol && ch.sym) {
+          return ch.sym[0];
+        } else if (mod_upper && ch.reg) {
+          return ch.reg[1];
+        } else if (ch.reg) {
+          return ch.reg[0];
+        }
+      }
     }
     return ''; // TODO: How to tab stuff?
   }
@@ -145,8 +184,8 @@
   async function processChord() {
     const c = chordToChar();
     if (c == 'Backspace') {
-      if (content.textContent.length > 0) {
-        content.textContent = content.textContent.slice(0, content.textContent.length - 1);
+      if (content.length > 0) {
+        content = content.slice(0, content.length - 1);
       }
       if (mod_upper) {
         mute_mod_upper_release = true;
@@ -154,7 +193,7 @@
       if (mod_symbol) {
         mute_mod_symbol_release = true;
       }
-      await navigator.clipboard.writeText(content.textContent);
+      await navigator.clipboard.writeText(content);
     } else if (c) {
       if (mod_upper && c != ' ') {
         mute_mod_upper_release = true;
@@ -162,9 +201,11 @@
       if (mod_symbol) {
         mute_mod_symbol_release = true;
       }
-      content.textContent += c;
-      await navigator.clipboard.writeText(content.textContent);
+      content += c;
+      await navigator.clipboard.writeText(content);
     }
+    editor.textContent = content;
+    editor.innerHTML += '<pre class="caret"> </pre>'
     chord.length = 0;
   }
 
